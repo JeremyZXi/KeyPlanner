@@ -167,18 +167,21 @@ public class SearchViewController {
     /**
      * Linear search implementation to find tasks that match the search term
      * @param searchTerm string that contain the search term
+     * @return ArrayList of Task objects that match the search result
      */
     private List<Task> linearSearch(String searchTerm) {
         List<Task> results = new ArrayList<>();
+        //convert search term  to lower case for matching
         String lowerCaseSearch = searchTerm.toLowerCase();
 
         // Linear search through all tasks
         for (Task task : allTasks) {
+            //compare every field of the task object
             if (taskMatches(task, lowerCaseSearch)) {
+                //is one of the possible result
                 results.add(task);
             }
         }
-
         return results;
     }
 
@@ -384,7 +387,7 @@ public class SearchViewController {
             return new Image(Objects.requireNonNull(getClass()
                             .getResource("/com/example/planner/icon/priority_medium.png"))
                     .toExternalForm());
-        } else if (Math.abs(p - 0.0) < EPS) {
+        } else if (Math.abs(p - 0.5) < EPS) {
             return new Image(Objects.requireNonNull(getClass()
                             .getResource("/com/example/planner/icon/priority_low.png"))
                     .toExternalForm());

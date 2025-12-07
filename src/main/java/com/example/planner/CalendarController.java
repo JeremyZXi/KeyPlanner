@@ -159,27 +159,23 @@ public class CalendarController implements Initializable {
      */
     private void buildCalendar() {
         gridMonth.getChildren().clear();
-
+        // get the current year-month being displayed
         YearMonth ym = currentYearMonth;
         LocalDate firstOfMonth = ym.atDay(1);
         int daysInMonth = ym.lengthOfMonth();
-
         // java time: Monday=1 ... Sunday=7
         int firstDayOfWeek = firstOfMonth.getDayOfWeek().getValue(); // 1-7
-        int firstColumn = firstDayOfWeek - 1; // 0-6 (Mon-Sun)
-
+        int firstColumn = firstDayOfWeek - 1; // 0-6 (Mon-Sun) convert to 0-based index (0=Mon, 6=Sun)
         LocalDate today = LocalDate.now();
-
         //add all the days
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate date = ym.atDay(day);
-            int cellIndex = firstColumn + (day - 1);
-            int row = cellIndex / 7;
-            int col = cellIndex % 7;
-
+            int cellIndex = firstColumn + (day - 1); // linear index from start
+            int row = cellIndex / 7; // which week (row 0, 1, 2, ...)
+            int col = cellIndex % 7; // which day of week (column 0-6)
+            //UI updates
             VBox dayCell = createDayCell(date, today);
             populateTasksForDay(dayCell, date);
-
             GridPane.setRowIndex(dayCell, row);
             GridPane.setColumnIndex(dayCell, col);
             gridMonth.getChildren().add(dayCell);
@@ -397,7 +393,7 @@ public class CalendarController implements Initializable {
                 return new Image(Objects.requireNonNull(getClass()
                                 .getResource("/com/example/planner/icon/priority_medium.png"))
                         .toExternalForm());
-            } else if (Math.abs(p - 0.0) < EPS) {
+            } else if (Math.abs(p - 0.5) < EPS) {
                 return new Image(Objects.requireNonNull(getClass()
                                 .getResource("/com/example/planner/icon/priority_low.png"))
                         .toExternalForm());

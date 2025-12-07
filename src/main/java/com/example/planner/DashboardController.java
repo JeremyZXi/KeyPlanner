@@ -75,14 +75,15 @@ public class DashboardController {
 
     //share data and window controll
     private MasterController masterController;
-    //map storing all the tasks
+    //map storing all the tasks; key: UUID, value:Task object
     private Map<String, Task> tasks = new HashMap<>();
-
+    // track TaskCard instances for UI updates; key: UUID, value TaskCard object
+    private final Map<String, TaskCard> taskCardMap = new HashMap<>();
 
     // state management for current task display
     private Task currentDisplayedTask = null;
 
-    // event listeners to manage cleanup
+    // event listeners to manage cleanup & updates
     private ChangeListener<String> titleListener = null;
     private ChangeListener<String> descriptionListener = null;
     private EventHandler<ActionEvent> completionHandler = null;
@@ -90,14 +91,14 @@ public class DashboardController {
     private Parser markdownParser;
     private HtmlRenderer markdownRenderer;
 
-    // track TaskCard instances for updates
-    private final Map<String, TaskCard> taskCardMap = new HashMap<>();
+
 
     // use to keep result of the auto planning
     private boolean optimizedActive = false;               // whether the user planned their task
     private boolean onInbox = true;
-    private ArrayList<String> optimizedTaskIds = new ArrayList<>(); // store the order and id of planned task
 
+    // store the order and id of planned task
+    private ArrayList<String> optimizedTaskIds = new ArrayList<>();
 
     //user setting
     private Setting setting;
@@ -126,28 +127,22 @@ public class DashboardController {
                 tasks = new HashMap<>();
                 masterController.setSharedData("Tasks", tasks);
             }
-
-                        /*
-                        Task temp = new Task(LocalDate.now(), LocalTime.now(),LocalTime.now(),10,"Test Task","This is a test task");
-                        tasks.put("task1",temp);
-                        StorageManager.save(tasks);
-                        */
             System.out.println("Dashboard initialized successfully with " + tasks.size() + " tasks");
         } catch (Exception e) {
             System.err.println("Error in DashboardController initialize: " + e.getMessage());
             e.printStackTrace();
 
-            //cCreate a fallback empty task list to prevent further errors
-
+            //Create a fallback empty task list to prevent further errors
             if (tasks == null) {
                 tasks = new HashMap<>();
             }
         }
         inbox();//refresh UI
+        /*
         if(setting.isOpenNextTime()){
             masterController.openWindow("/com/example/planner/Help.fxml", "Tips", null, null);
             System.out.println("tips opened");
-        }
+        }*/
 
 
 
@@ -309,7 +304,7 @@ public class DashboardController {
      * clean up all the listeners to avoid memory leak
      */
     private void cleanupEventListeners() {
-        // Remove old listeners if they exist
+        // Remove old listeners if they exist to prevent memory leak
         if (titleListener != null) {
             txtFieldTaskName.textProperty().removeListener(titleListener);
         }
@@ -327,32 +322,36 @@ public class DashboardController {
      */
     private void setupEventListeners(Task task) {
 
-        //listen to title, description, completion
-
+        //listen to title, description, completion of the editing area(right)
         titleListener = (obs, oldVal, newVal) -> {
+            //update the task info with new title
             task.setTitle(newVal);
+            //refresh task card
             refreshTaskCard(task);
+            //permanent storage
             saveTasksToStorage();
         };
         txtFieldTaskName.textProperty().addListener(titleListener);
 
-
         descriptionListener = (obs, oldVal, newVal) -> {
+            //update the task info with new description
             task.setDescription(newVal);
+            //refresh task card
             renderMarkdown(newVal);
+            //permanent storage
             saveTasksToStorage();
         };
         txtAreaDescription.textProperty().addListener(descriptionListener);
 
-
         completionHandler = e -> {
             task.setComplete(checkBoxIsComplete.isSelected());
             refreshTaskCard(task);
+            //refresh task card
             saveTasksToStorage();
             //refresh the sorting when completion status changes
             renderLists(getActiveSource());
-            //if (optimizedActive && !onInbox) {applyOptimizedLayout();}
         };
+        //update completion status
         checkBoxIsComplete.setOnAction(completionHandler);
     }
 
@@ -470,7 +469,10 @@ public class DashboardController {
         taskCardMap.clear();
 
         LocalDate today = LocalDate.now();
+        //store task locally with order to display them with UI
+        //tasks that are due today or past due, containing Task object
         ArrayList<Task> completeToday = new ArrayList<>();
+        //tasks that are not yet due, containing Task object
         ArrayList<Task> completeAll = new ArrayList<>();
 
         //loop over all the tasks
@@ -479,7 +481,7 @@ public class DashboardController {
             taskCardMap.put(task.getId(), card);
             card.refreshDisplay();
 
-            // ★ Treat dueDate <= today as "Today's Tasks"
+            // Treat dueDate <= today as "Today's Tasks"
             boolean dueKnown = task.getDueDate() != null;
             boolean isTodayOrPast = dueKnown && !task.getDueDate().isAfter(today);
 
@@ -530,7 +532,7 @@ public class DashboardController {
             return new Image(Objects.requireNonNull(getClass()
                             .getResource("/com/example/planner/icon/priority_medium.png"))
                     .toExternalForm());
-        } else if (Math.abs(p - 0.0) < EPS) {
+        } else if (Math.abs(p - 0.5) < EPS) {
             return new Image(Objects.requireNonNull(getClass()
                             .getResource("/com/example/planner/icon/priority_low.png"))
                     .toExternalForm());
@@ -567,12 +569,19 @@ public class DashboardController {
         // filter tasks: today(in case it's been a day & optimized)
         LocalDate today = LocalDate.now();
         ArrayList<String> stillApplicable = new ArrayList<>();
+
+        //loop over all optimized task
+        //optimizedTaskIds has been filled with UUID
+        //of task selected by dynamic programming
         for (String id : optimizedTaskIds) {
+            //use get() method in hashmap, only O(1)
             Task t = tasks.get(id);
+            //check is any data's missing
             if (t != null && t.getDueDate() != null
                     && (t.getDueDate().equals(today)
                     || t.getDueDate().isBefore(today))
                     && !t.isComplete()) {
+                //add id to stillApplicable which update UI and status
                 stillApplicable.add(id);
             }
         }
@@ -626,8 +635,6 @@ public class DashboardController {
     @FXML
     public void handleAddTask() {
         //masterController.openWindow("/com/example/planner/PopupSelection.fxml","Add New Tasks",null);
-
-
         masterController.openWindow("/com/example/planner/PopupSelection.fxml", "Add New Tasks", () -> {
                     // callback runs AFTER the popup is closed
                     // Reload task list from shared data
@@ -635,8 +642,6 @@ public class DashboardController {
                     inbox(); // refresh the UI
                 }, null
         );
-
-
     }
 
     @FXML
@@ -731,27 +736,18 @@ public class DashboardController {
 
     @FXML
     public void onCalendar() {
-
         masterController.closeWindow("Dashboard");
         masterController.openWindow("/com/example/planner/Calendar.fxml", "Calendar", null, null);
-
-
     }
-
     @FXML
     public void onDashboard() {
-
         masterController.closeWindow("Dashboard");
         masterController.openWindow("/com/example/planner/Dashboard.fxml", "Dashboard", null, null);
-
     }
-
     @FXML
     public void onSearch() {
-
         masterController.openWindow("/com/example/planner/SearchView.fxml", "Search", null, null);
     }
-
     @FXML
     private void onHelp() {
         masterController.openWindow("/com/example/planner/Help.fxml", "Help",null,null);

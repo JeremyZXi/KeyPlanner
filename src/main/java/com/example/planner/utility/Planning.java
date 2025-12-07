@@ -30,18 +30,22 @@ public class Planning {
 
         List<Task> taskList = new ArrayList<>(tasks.values());
         int num = taskList.size();
+        // result[i][j] represents the maximum total priority achievable
+        // using the first i tasks within j units of available time.
         double[][] result = new double[num + 1][availableTime + 1];
 
-
-        // dynamic programming for 0/1 knapsack
-        for (int i = 1; i <= num; i++) {
-            Task currentTask = taskList.get(i - 1);
+        for (int i = 1; i <= num; i++) { //loop through all the tasks
+            Task currentTask = taskList.get(i - 1); // current task under consideration
             for (int j = 0; j <= availableTime; j++) {
-                // see if select
                 if (j < currentTask.getTimeSpan()) {
-                    result[i][j] = result[i - 1][j]; // drop the current task because they can't fit into the time slot
+                    // case 1: If the current task’s time requirement exceeds available time j,
+                    // we cannot include it, so carry forward the best result from the previous task.
+                    result[i][j] = result[i - 1][j];
                 } else {
-                    // time available for the current task, see if the task is prioritized or not to determine whether pick or note
+                    // case 2: Otherwise, we have two choices:
+                    // 1. exclude the current task, so result[i - 1][j]
+                    // 2. include the current task, so result[i - 1][j - timeSpan] + priority
+                    // we pick whichever gives the higher total priority.
                     result[i][j] = Math.max(
                             result[i - 1][j],
                             result[i - 1][j - currentTask.getTimeSpan()] + currentTask.getPriority()
@@ -52,18 +56,21 @@ public class Planning {
 
         System.out.println("Optimal priority: " + result[num][availableTime]);
 
+
         // backtrack to find selected tasks
         ArrayList<Task> selectedTasks = new ArrayList<>();
         int j = availableTime;
-
+        // move backward through the DP table
         for (int i = num; i > 0; i--) {
+            // if the value differs from the previous row, it means task i was included.
             if (result[i][j] != result[i - 1][j]) {
                 Task selected = taskList.get(i - 1);
                 selectedTasks.add(selected);
+                // subtract the selected task's time to continue tracing back
                 j -= selected.getTimeSpan();
+                // of result[i][j] == result[i - 1][j], task i was not selected, so move to previous task
             }
         }
-
 
         return sort(selectedTasks);
     }
@@ -71,30 +78,29 @@ public class Planning {
     /**
      * sort the task based on priority
      * @param taskList list of task to sort
-     * @return sorted task descending
+     * @return sorted task  ArrayList in descending order of priority
      */
     private static ArrayList<Task> sort(ArrayList<Task> taskList) {
-
-
+        //assume swapped
         boolean swapped = true;
         int n = taskList.size();
 
         while (swapped) {
             swapped = false;
-
+            //loop over all tasks
             for (int i = 0; i < n - 1; i++) {
                 Task current = taskList.get(i);
                 Task next = taskList.get(i + 1);
-
                 // big one goes first
                 if (current.getPriority() < next.getPriority()) {
+                    //move tasks
                     taskList.set(i, next);
                     taskList.set(i + 1, current);
+                    //update status
                     swapped = true;
                 }
             }
         }
-
         return new ArrayList<>(taskList);
     }
 

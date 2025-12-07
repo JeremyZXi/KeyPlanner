@@ -18,9 +18,13 @@ import java.util.Map;
 
 public class MasterController {
     private static MasterController instance;
-    private final Map<String, Object> sharedData = new HashMap<>();
-    private final Map<String, Stage> windows = new HashMap<>();
 
+    //store objects with key being the name of the data it stores
+    // and value being the object/array itself
+    private final Map<String, Object> sharedData = new HashMap<>();
+    //use to store windows with the key being the title of the window
+    // and value being the stage object
+    private final Map<String, Stage> windows = new HashMap<>();
     // Private constructor prevents instantiation from other classes
     private MasterController() throws Exception {
         //loaddata
@@ -51,7 +55,6 @@ public class MasterController {
         System.out.println(windows.get(key));
         return windows.get(key);
     }
-
     /**
      * load setting from permanent storage
      * @throws Exception
@@ -63,9 +66,8 @@ public class MasterController {
         }
         setSharedData("setting", setting);
     }
-
     /**
-     *
+     * get a instance of MasterController
      * @return instance of MasterController
      * @throws Exception
      */
@@ -75,13 +77,11 @@ public class MasterController {
         }
         return instance;
     }
-
     // Method to retrieve shared data
     @SuppressWarnings("unchecked")
     public <T> T getSharedData(String key) {
         return (T) sharedData.get(key);
     }
-
     /**
      * Open a new window
      * @param fxmlPath path to the FXML
@@ -89,26 +89,26 @@ public class MasterController {
      * @param onCloseCallback callback method
      * @param callerStage the stage object that calls this window
      */
-    public void openWindow(String fxmlPath, String title, Runnable onCloseCallback, Stage callerStage) {
+    public void openWindow(String fxmlPath,
+                           String title,
+                           Runnable onCloseCallback,
+                           Stage callerStage) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
-            Parent root = loader.load();
-
+            Parent root = loader.load();//load the fxml
             Stage stage = new Stage();
             stage.setTitle(title);
-            stage.setScene(new Scene(root));
+            stage.setScene(new Scene(root));//put the fxml into the stage
             stage.setOnHidden(e -> {
-                windows.remove(title); // Remove from map when window is closed
+                windows.remove(title); // remove from map when window is closed
                 if (onCloseCallback != null) {
-                    onCloseCallback.run();
+                    onCloseCallback.run();//run the callback method when closing
                 }
             });
             if (callerStage != null) {
                 stage.setOnHidden(e -> callerStage.show());
             }
-
-
-            // Store the stage in the windows map
+            // store the stage in the windows map
             windows.put(title, stage);
             stage.show();
         } catch (IOException e) {
@@ -126,7 +126,6 @@ public class MasterController {
             stage.hide();
         }
     }
-
     /**
      * show the window with that title
      * @param title title/key
@@ -137,7 +136,6 @@ public class MasterController {
             stage.show();
         }
     }
-
     /**
      *show the window with that title
      * @param title title/key
@@ -149,7 +147,6 @@ public class MasterController {
             windows.remove(title);
         }
     }
-
     /**
      * show alert pop up
      * @param alertTitle title of that popup
@@ -164,7 +161,6 @@ public class MasterController {
         alert.showAndWait(); // Wait for the user to acknowledge the alert
     }
 
-
     /**
      * set shared data into master controller
      * @param key key of that object
@@ -173,7 +169,6 @@ public class MasterController {
     public void setSharedData(String key, Object value) {
         sharedData.put(key, value);
     }
-
     /**
      * method to get stack trace string
      * @param e
@@ -185,6 +180,4 @@ public class MasterController {
         e.printStackTrace(pw);
         return sw.toString();
     }
-
-
 }

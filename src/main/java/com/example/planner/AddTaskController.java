@@ -227,7 +227,7 @@ public class AddTaskController {
 
     @FXML
     private void onLowPriority() {
-        priority = 0.0;
+        priority = 0.5;
         priorityImage.setImage(new Image(
                 Objects.requireNonNull(getClass().getResource("/com/example/planner/icon/priority_low.png")).toExternalForm()
         ));

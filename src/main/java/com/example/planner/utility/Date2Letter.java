@@ -79,31 +79,40 @@ public class Date2Letter {
             Files.createDirectories(outputPath.getParent());
         }
 
-        int currentCycleIndex = 0;
+
 
         try (Writer writer = Files.newBufferedWriter(outputPath);
-             CSVWriter csvWriter = new CSVWriter(writer)) {
 
+             CSVWriter csvWriter = new CSVWriter(writer)) {
             // Header row
             csvWriter.writeNext(new String[]{"date", "weekday", "cycle_letter"});
-
+            //loop over each day; offset denotes the number of day passing startDate
+            //CYCLE_LETTERS = {"A", "B", "C", "D", "E", "F", "G", "H"}
+            int currentCycleIndex = 0;
             for (int offset = 0; offset < numDays; offset++) {
+                //obtain the calendar date YYYY-MM-DD
                 LocalDate currentDate = startDate.plusDays(offset);
+                //determine which day of the week is that day
                 DayOfWeek dayOfWeek = currentDate.getDayOfWeek();
-
+                //check if the day is weekend
                 boolean isWeekend = (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY);
+                //check if the day is a holiday. holidays is a set containing LocalDate object
                 boolean isHoliday = holidays != null && holidays.contains(currentDate);
 
                 String cycleLetter;
                 if (isWeekend || isHoliday) {
+                    //set all weekend and holidays to 0 so the cycle does not advance
                     cycleLetter = "0";
                 } else {
+                    //obtain the letter date from the array based on index
                     cycleLetter = CYCLE_LETTERS[currentCycleIndex];
+                    //update currentCycleIndex by (currentCycleIndex+1)%8
+                    //result will always repeating from 0~7
                     currentCycleIndex = (currentCycleIndex + 1) % CYCLE_LETTERS.length;
                 }
 
+                //format them correctly
                 String weekdayName = dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH); // e.g. "Monday"
-
                 csvWriter.writeNext(new String[]{
                         currentDate.toString(), // YYYY-MM-DD
                         weekdayName,
@@ -140,6 +149,7 @@ public class Date2Letter {
      * @param holidayFile file containing holidays
      */
     public static Set<LocalDate> loadHolidaysFromCsv(File holidayFile) {
+        //set for holidays as date do not repeat
         Set<LocalDate> holidays = new HashSet<>();
 
         if (holidayFile == null) {
